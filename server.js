@@ -1,50 +1,21 @@
-const express = require('express');
-const fs = require('fs').promises;
-const path = require('path');
-const { marked } = require('marked');
-const matter = require('gray-matter');
-const chokidar = require('chokidar');
-const ejsLocals = require('ejs-locals');
+import express from 'express';
+import fs from 'fs/promises';
+import path from 'path';
+import { marked } from 'marked';
+import matter from 'gray-matter';
+import chokidar from 'chokidar';
+import ejsLocals from 'ejs-locals';
+import TikZProcessor from './tikz-processor.js';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const tikzProcessor = new TikZProcessor();
 
-// Configure marked with custom renderer for TikZ
-const renderer = new marked.Renderer();
-
-// Custom renderer for code blocks to handle TikZ
-renderer.code = function(code, language) {
-  if (language === 'tikz') {
-    // Return a div with the TikZ code that will be processed by tikz.js on the client
-    return `<div class="tikz-container">
-  <div class="tikz-code" style="display: none;">${code}</div>
-  <div class="tikz-placeholder">
-    <p>🎨 Rendering TikZ diagram...</p>
-    <div class="loading-spinner">⟳</div>
-  </div>
-</div>`;
-  }
-  
-  // Default code block rendering for other languages
-  const escapedCode = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-  
-  return `<pre><code class="language-${language || ''}">${escapedCode}</code></pre>`;
-};
-
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-  headerIds: true,
-  mangle: false,
-  renderer: renderer
-});
-
-// Pre-process markdown to extract and render TikZ blocks
+// Pre-process markdown to extract and render TikZ blocks server-side
 async function preprocessMarkdownWithTikz(markdownContent) {
   console.log('🔄 Pre-processing markdown for TikZ blocks...');
   
@@ -68,21 +39,21 @@ async function preprocessMarkdownWithTikz(markdownContent) {
   
   console.log(`🎨 Processing ${tikzBlocks.length} TikZ block(s)...`);
   
-  // Process each TikZ block and get SVG paths
+  // Process each TikZ block and get image paths
   let processedMarkdown = markdownContent;
   
   for (const { tikzCode, fullMatch } of tikzBlocks) {
     try {
       console.log(`🔧 Rendering TikZ diagram...`);
-      const svgPath = await tikzProcessor.processTikzCode(tikzCode);
+      const imagePath = await tikzProcessor.processTikzCode(tikzCode);
       
       // Replace the TikZ code block with HTML img tag
       const imageHtml = `<div class="tikz-container">
-  <img src="${svgPath}" alt="TikZ Diagram" class="tikz-image" />
+  <img src="${imagePath}" alt="TikZ Diagram" class="tikz-image" />
 </div>`;
       
       processedMarkdown = processedMarkdown.replace(fullMatch, imageHtml);
-      console.log(`✅ TikZ block rendered and replaced with: ${svgPath}`);
+      console.log(`✅ TikZ block rendered and replaced with: ${imagePath}`);
       
     } catch (error) {
       console.error(`❌ Failed to render TikZ block:`, error);
@@ -91,6 +62,7 @@ async function preprocessMarkdownWithTikz(markdownContent) {
       const errorHtml = `<div class="tikz-container tikz-error">
   <p>❌ TikZ Rendering Error</p>
   <pre><code>${tikzCode}</code></pre>
+  <small>Error: ${error.message}</small>
 </div>`;
       processedMarkdown = processedMarkdown.replace(fullMatch, errorHtml);
     }
@@ -99,6 +71,14 @@ async function preprocessMarkdownWithTikz(markdownContent) {
   console.log('✅ TikZ pre-processing complete');
   return processedMarkdown;
 }
+
+// Configure marked for standard rendering
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+  headerIds: true,
+  mangle: false
+});
 
 // Serve static files
 app.use(express.static('public'));
@@ -109,8 +89,6 @@ app.set('views', './views');
 // Store blog posts in memory
 let blogPosts = new Map();
 let blogSeries = new Map();
-
-// Remove the old processTikzInHtml function since we're not using it anymore
 
 // Load all blog posts from /blogs directory
 async function loadBlogPosts() {
@@ -147,7 +125,7 @@ async function loadBlogPosts() {
   }
 }
 
-// Load individual blog post
+// Load individual blog post with server-side TikZ processing
 async function loadBlogPost(filePath) {
   try {
     console.log(`📖 Reading file: ${filePath}`);
@@ -351,45 +329,82 @@ app.get('/series/:name', (req, res) => {
   });
 });
 
-// Simple debug route to test TikZ rendering
-app.get('/debug/tikz-test', (req, res) => {
-  res.send(`
+// Debug route to test TikZ rendering
+app.get('/debug/tikz-test', async (req, res) => {
+  const testTikz = `\\begin{tikzpicture}
+\\draw (0,0) -- (2,0) -- (1,1.7) -- cycle;
+\\node[below] at (0,0) {A};
+\\node[below] at (2,0) {B};
+\\node[above] at (1,1.7) {C};
+\\end{tikzpicture}`;
+
+  try {
+    const svgPath = await tikzProcessor.processTikzCode(testTikz);
+    
+    // Return HTML page showing the result
+    res.send(`
 <!DOCTYPE html>
 <html>
 <head>
     <title>TikZ Test</title>
-    <script src="https://unpkg.com/tikzjs@1.0.0/tikz.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+        .result { margin: 2rem 0; padding: 1rem; border: 1px solid #ccc; }
+        .success { border-color: #4caf50; background: #f0fff0; }
+        .error { border-color: #f44336; background: #fff0f0; }
+        img { max-width: 100%; border: 1px solid #ddd; }
+        pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; }
+    </style>
 </head>
 <body>
-    <h1>TikZ.js Test</h1>
-    <div id="tikz-output"></div>
+    <h1>TikZ Test Results</h1>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.tikz) {
-                const tikzCode = \`\\\\begin{tikzpicture}
-\\\\draw (0,0) -- (2,0) -- (1,1.7) -- cycle;
-\\\\node[below] at (0,0) {A};
-\\\\node[below] at (2,0) {B};
-\\\\node[above] at (1,1.7) {C};
-\\\\end{tikzpicture}\`;
-                
-                try {
-                    const svg = tikz.tex2svg(tikzCode);
-                    document.getElementById('tikz-output').appendChild(svg);
-                    console.log('TikZ rendered successfully');
-                } catch (error) {
-                    console.error('TikZ error:', error);
-                    document.getElementById('tikz-output').innerHTML = '<p>Error: ' + error.message + '</p>';
-                }
-            } else {
-                document.getElementById('tikz-output').innerHTML = '<p>TikZ.js not loaded</p>';
-            }
-        });
-    </script>
+    <h2>Input TikZ Code:</h2>
+    <pre><code>${testTikz}</code></pre>
+    
+    <h2>Result:</h2>
+    <div class="result success">
+        <p><strong>✓ Success!</strong> TikZ rendered successfully</p>
+        <p><strong>SVG Path:</strong> ${svgPath}</p>
+        <p><strong>Rendered Image:</strong></p>
+        <img src="${svgPath}" alt="TikZ Triangle" />
+    </div>
+    
+    <p><a href="/blog">← Back to Blog</a></p>
 </body>
 </html>
-  `);
+    `);
+  } catch (error) {
+    res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TikZ Test - Error</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+        .result { margin: 2rem 0; padding: 1rem; border: 1px solid #ccc; }
+        .error { border-color: #f44336; background: #fff0f0; }
+        pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>TikZ Test Results</h1>
+    
+    <h2>Input TikZ Code:</h2>
+    <pre><code>${testTikz}</code></pre>
+    
+    <h2>Result:</h2>
+    <div class="result error">
+        <p><strong>❌ Error!</strong> TikZ rendering failed</p>
+        <p><strong>Error:</strong> ${error.message}</p>
+        <pre><code>${error.stack}</code></pre>
+    </div>
+    
+    <p><a href="/blog">← Back to Blog</a></p>
+</body>
+</html>
+    `);
+  }
 });
 
 // Debug route to check loaded posts
@@ -442,7 +457,8 @@ async function init() {
     console.log('💡 Quick start:');
     console.log('   - Visit http://localhost:3000 to see your blog');
     console.log('   - Add .md files to ./blogs/ directory');
-    console.log('   - Check http://localhost:3000/debug/posts to see loaded posts');
+    console.log('   - Test TikZ at http://localhost:3000/debug/tikz-test');
+    console.log('   - Check posts at http://localhost:3000/debug/posts');
     console.log('');
   });
 }

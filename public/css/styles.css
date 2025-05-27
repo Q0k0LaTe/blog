@@ -330,7 +330,7 @@ a:hover {
   border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
-/* TikZ diagram styling - Client-side rendered */
+/* TikZ diagram styling - Server-side rendered */
 .tikz-container {
   display: flex;
   justify-content: center;
@@ -341,49 +341,57 @@ a:hover {
   border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: 2px;
   text-align: center;
-  min-height: 120px;
 }
 
-.tikz-rendered {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 2.5rem 0;
-  padding: 2rem;
-  background: #fafafa;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 2px;
-  text-align: center;
-}
-
-.tikz-rendered svg {
+.tikz-image {
   max-width: 100%;
   height: auto;
+  display: block;
+  margin: 0 auto;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
-.tikz-placeholder {
-  display: flex;
+.tikz-error {
+  background: #ffebee;
+  border-color: #f44336;
+  color: #d32f2f;
   flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  color: var(--light-text);
+}
+
+.tikz-error p {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.tikz-error pre {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin: 1rem 0 0 0;
+  text-align: left;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tikz-error small {
+  margin-top: 0.5rem;
   font-style: italic;
+  opacity: 0.8;
 }
 
-.tikz-placeholder p {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.loading-spinner {
-  font-size: 1.5rem;
-  animation: spin 2s linear infinite;
-  color: var(--accent-color);
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
+/* Responsive TikZ images */
+@media (max-width: 768px) {
+  .tikz-container {
+    padding: 1rem;
+    margin: 1.5rem 0;
+  }
+  
+  .tikz-image {
+    max-width: 100%;
+    width: auto;
+  }
+}0deg); }
   100% { transform: rotate(360deg); }
 }
 

@@ -87,15 +87,12 @@
         </div>
     </footer>
     
-    <!-- TikZ.js for TikZ rendering - Using correct CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/tikzjs@1.0.0/dist/tikz.js"></script>
-    
-    <!-- Re-render MathJax and TikZ after page load -->
+    <!-- Re-render MathJax after page load -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Page loaded, initializing renderers...');
+            console.log('🚀 Page loaded, initializing MathJax...');
             
-            // Re-render MathJax first
+            // Re-render MathJax
             if (window.MathJax) {
                 MathJax.typesetPromise().then(() => {
                     console.log('✓ MathJax rendered successfully');
@@ -106,87 +103,10 @@
                 console.warn('⚠️ MathJax not available');
             }
             
-            // Process TikZ diagrams after MathJax
-            setTimeout(() => {
-                processTikzDiagrams();
-            }, 500);
+            // Log TikZ images found (server-side rendered)
+            const tikzImages = document.querySelectorAll('.tikz-image');
+            console.log(`✓ Found ${tikzImages.length} server-rendered TikZ diagrams`);
         });
-
-        function processTikzDiagrams() {
-            console.log('🎨 Starting TikZ processing...');
-            
-            // Check if TikZ.js is loaded
-            if (typeof tikz === 'undefined') {
-                console.error('❌ TikZ.js library not loaded');
-                
-                // Show error in all TikZ containers
-                const containers = document.querySelectorAll('.tikz-container');
-                containers.forEach(container => {
-                    container.innerHTML = `
-                        <div style="color: #d32f2f; text-align: center;">
-                            <p>❌ TikZ.js library failed to load</p>
-                            <small>Check your internet connection or try refreshing the page</small>
-                        </div>
-                    `;
-                });
-                return;
-            }
-            
-            // Find all TikZ code blocks
-            const tikzBlocks = document.querySelectorAll('.tikz-code');
-            console.log(`📝 Found ${tikzBlocks.length} TikZ diagrams to render`);
-            
-            if (tikzBlocks.length === 0) {
-                console.log('ℹ️ No TikZ diagrams found on this page');
-                return;
-            }
-            
-            tikzBlocks.forEach((codeBlock, index) => {
-                try {
-                    const tikzCode = codeBlock.textContent.trim();
-                    console.log(`🔧 Rendering TikZ diagram ${index + 1}:`, tikzCode.substring(0, 50) + '...');
-                    
-                    // Find the parent container
-                    const container = codeBlock.closest('.tikz-container');
-                    if (!container) {
-                        console.error(`❌ No container found for TikZ block ${index + 1}`);
-                        return;
-                    }
-                    
-                    // Render the TikZ code to SVG
-                    const svg = tikz.tex2svg(tikzCode);
-                    
-                    // Create a new rendered container
-                    const renderedContainer = document.createElement('div');
-                    renderedContainer.className = 'tikz-rendered';
-                    renderedContainer.appendChild(svg);
-                    
-                    // Replace the entire container with the rendered one
-                    container.parentNode.replaceChild(renderedContainer, container);
-                    
-                    console.log(`✅ TikZ diagram ${index + 1} rendered successfully`);
-                    
-                } catch (error) {
-                    console.error(`❌ Error rendering TikZ diagram ${index + 1}:`, error);
-                    
-                    // Find the parent container
-                    const container = codeBlock.closest('.tikz-container');
-                    if (container) {
-                        // Show error message with the original code
-                        const tikzCode = codeBlock.textContent.trim();
-                        container.innerHTML = `
-                            <div class="tikz-error">
-                                <p>❌ TikZ Rendering Error</p>
-                                <pre><code>${tikzCode}</code></pre>
-                                <small>Error: ${error.message}</small>
-                            </div>
-                        `;
-                    }
-                }
-            });
-            
-            console.log('🎨 TikZ processing completed');
-        }
     </script>
 </body>
 </html>
