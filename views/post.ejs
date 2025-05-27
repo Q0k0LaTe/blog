@@ -1,0 +1,48 @@
+<% layout('layout') -%>
+
+<article class="card">
+    <% if (post.series) { %>
+    <span class="post-series"><%= post.series %></span>
+    <% } %>
+    
+    <h1><%= post.title %></h1>
+    
+    <div class="post-meta">
+        <span class="post-date"><%= new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+        <% if (post.tags && post.tags.length > 0) { %>
+        <div style="margin-top: 0.5rem;">
+            <% post.tags.forEach(tag => { %>
+            <span style="background: #ecf0f1; color: #2c3e50; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-right: 0.5rem;"><%= tag %></span>
+            <% }) %>
+        </div>
+        <% } %>
+    </div>
+    
+    <div class="post-content">
+        <%- post.content %>
+    </div>
+</article>
+
+<% if (relatedPosts.length > 0) { %>
+<div class="card">
+    <h2>More from "<%= post.series %>" Series</h2>
+    <div class="blog-grid">
+        <% relatedPosts.forEach(relatedPost => { %>
+        <div class="blog-post-card card">
+            <h3><a href="/blog/<%= relatedPost.id %>"><%= relatedPost.title %></a></h3>
+            <div class="post-meta">
+                <span class="post-date"><%= new Date(relatedPost.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+            </div>
+            <p class="excerpt"><%= relatedPost.excerpt %></p>
+        </div>
+        <% }) %>
+    </div>
+    <div style="text-align: center; margin-top: 1rem;">
+        <a href="/series/<%= encodeURIComponent(post.series) %>" class="paper-link">View All Posts in Series</a>
+    </div>
+</div>
+<% } %>
+
+<div style="text-align: center; margin-top: 2rem;">
+    <a href="/blog" style="color: #3498db; text-decoration: none;">← Back to Blog</a>
+</div>

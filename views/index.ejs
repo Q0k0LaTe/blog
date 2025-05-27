@@ -1,0 +1,53 @@
+<% layout('layout') -%>
+
+<div class="card research-overview">
+    <h2>Research Overview</h2>
+    <p>My research is driven by the fundamental question of how we can design AI systems that augment human intelligence rather than replace it. I focus on developing interpretable, trustworthy, and human-centered AI solutions that address real-world challenges in education, healthcare, and scientific discovery.</p>
+    
+    <p>Current research interests include explainable AI, human-AI collaboration, adaptive learning systems, and multimodal machine learning. I employ both theoretical and empirical approaches, combining rigorous mathematical foundations with user-centered design methodologies.</p>
+</div>
+
+<div class="card">
+    <span class="featured-badge">FEATURED RESEARCH</span>
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <span style="background: #3498db; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem;">CONFERENCE PAPER</span>
+        <span style="color: #7f8c8d;">2024</span>
+        <span style="color: #7f8c8d;">📊 89 citations</span>
+    </div>
+    
+    <h3>Enhancing Human-AI Collaboration through Interpretable Machine Learning Models</h3>
+    <p>This paper presents a novel framework for developing interpretable machine learning models that facilitate effective human-AI collaboration in complex decision-making scenarios. We demonstrate significant improvements in user trust and task performance across multiple domains.</p>
+    
+    <a href="#" class="paper-link">Read Full Paper →</a>
+</div>
+
+<% if (recentPosts.length > 0) { %>
+<div class="card">
+    <h2>Recent Blog Posts</h2>
+    <div class="blog-grid">
+        <% recentPosts.forEach(post => { %>
+        <div class="blog-post-card card">
+            <% if (post.series) { %>
+            <span class="post-series"><%= post.series %></span>
+            <% } %>
+            <h3><a href="/blog/<%= post.id %>"><%= post.title %></a></h3>
+            <div class="post-meta">
+                <span class="post-date"><%= new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+            </div>
+            <p class="excerpt"><%= post.excerpt %></p>
+        </div>
+        <% }) %>
+    </div>
+    
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="/blog" class="paper-link">View All Posts (<%= totalPosts %>)</a>
+    </div>
+</div>
+<% } %>
+
+<div class="card">
+    <h2>Mathematics & Life</h2>
+    <p>Welcome to my personal exploration of how mathematical thinking illuminates the patterns and beauty in everyday life. Here, I share insights from my research journey, thoughts on the intersection of AI and human cognition, and reflections on how mathematical principles guide both scientific discovery and personal growth.</p>
+    
+    <p>Whether you're interested in the latest developments in machine learning, the philosophical implications of artificial intelligence, or simply curious about how mathematical concepts can enhance your understanding of the world, I hope you'll find something here that resonates with your own intellectual journey.</p>
+</div>

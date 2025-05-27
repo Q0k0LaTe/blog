@@ -1,0 +1,60 @@
+<% layout('layout') -%>
+
+<h1>Blog</h1>
+
+<% if (series.length > 0) { %>
+<div class="card">
+    <h2>Blog Series</h2>
+    <div class="series-grid">
+        <% series.forEach(s => { %>
+        <div class="series-card card">
+            <h3><a href="/series/<%= encodeURIComponent(s.name) %>"><%= s.name %></a></h3>
+            <div class="series-count"><%= s.count %> post<%= s.count !== 1 ? 's' : '' %></div>
+            <p>Explore this collection of related posts that dive deep into <%= s.name.toLowerCase() %>.</p>
+        </div>
+        <% }) %>
+    </div>
+</div>
+<% } %>
+
+<div class="card">
+    <h2>All Posts (<%= posts.length %>)</h2>
+    <% if (posts.length === 0) { %>
+    <p>No blog posts yet. Create your first post by adding a markdown file to the <code>/blogs</code> directory!</p>
+    <p><strong>Example:</strong> Create <code>blogs/my-first-post.md</code> with frontmatter:</p>
+    <pre>---
+title: "My First Post"
+date: "2024-01-01"
+series: "Getting Started"
+tags: ["introduction", "blog"]
+excerpt: "Welcome to my academic blog!"
+---
+
+# Hello World
+
+This is my first blog post...
+</pre>
+    <% } else { %>
+    <div class="blog-grid">
+        <% posts.forEach(post => { %>
+        <div class="blog-post-card card">
+            <% if (post.series) { %>
+            <span class="post-series"><%= post.series %></span>
+            <% } %>
+            <h3><a href="/blog/<%= post.id %>"><%= post.title %></a></h3>
+            <div class="post-meta">
+                <span class="post-date"><%= new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+                <% if (post.tags && post.tags.length > 0) { %>
+                <div style="margin-top: 0.5rem;">
+                    <% post.tags.forEach(tag => { %>
+                    <span style="background: #ecf0f1; color: #2c3e50; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-right: 0.5rem;"><%= tag %></span>
+                    <% }) %>
+                </div>
+                <% } %>
+            </div>
+            <p class="excerpt"><%= post.excerpt %></p>
+        </div>
+        <% }) %>
+    </div>
+    <% } %>
+</div>
